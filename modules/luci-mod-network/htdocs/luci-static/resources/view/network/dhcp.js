@@ -612,6 +612,18 @@ return view.extend({
 			_('Query all available upstream resolvers.'));
 		o.optional = true;
 
+		o = s.taboption('advanced', form.Flag, 'add_mac',
+			_('Add MAC address'),
+			_('Add the MAC address of the requestor to DNS queries which are forwarded upstream.'));
+		o.optional = true;
+
+		o = s.taboption('advanced', form.Value, 'add_subnet',
+			_('Subnet addresses forwarded upstream'),
+			_('Add a subnet address to the DNS queries which are forwarded upstream.'));
+		o.depends('add_mac', '1');
+		o.optional = true;
+		o.placeholder = '32,128';
+
 		o = s.taboption('advanced', form.DynamicList, 'bogusnxdomain',
 			customi18n(_('IPs to override with {nxdomain}') ),
 			customi18n(_('Transform replies which contain the specified addresses or subnets into {nxdomain} responses.') )
