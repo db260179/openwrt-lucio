@@ -554,6 +554,106 @@ var CBIWifiFrequencyValue = form.Value.extend({
 	}
 });
 
+var CBIWifiChannelsValue = form.Value.extend({
+    callFrequencyList: rpc.declare({
+        object: 'iwinfo',
+        method: 'freqlist',
+        params: ['device'],
+        expect: { results: [] }
+    }),
+
+    load: function (section_id) {
+        return Promise.all([
+            this.callFrequencyList(section_id)
+        ]).then(L.bind(function (data) {
+            this.channels = {
+                '2g': [],  // Customize based on your data structure
+                '5g': [],  // Customize based on your data structure
+                '6g': [],  // Customize based on your data structure
+                '60g': []  // Customize based on your data structure
+            };
+
+            for (var i = 0; i < data[0].length; i++) {
+                if (!data[0][i].band)
+                    continue;
+
+                var band = '%dg'.format(data[0][i].band);
+
+                // Extract only the channel number
+                var channelNumber = data[0][i].channel.split(' ')[0];
+
+                this.channels[band].push(
+                    channelNumber,
+                    // You can include additional information if needed
+                    // '%d (%d Mhz)'.format(channelNumber, data[0][i].mhz),
+                    !data[0][i].restricted
+                );
+            }
+        }, this));
+    },
+
+    setValues: function (sel, vals) {
+        while (sel.options[0]) {
+            sel.remove(0);
+        }
+
+        for (var i = 0; i < vals.length; i++) {
+            sel.add(E('option', { value: vals[i], selected: false }, [vals[i]]));
+        }
+    },
+
+    setSelectedChannels: function (sel, selectedChannels) {
+        for (var i = 0; i < sel.options.length; i++) {
+            sel.options[i].selected = selectedChannels.includes(sel.options[i].value);
+        }
+    },
+
+    renderWidget: function (section_id, option_index, cfgvalue) {
+        var elem = E('div');
+
+        dom.content(elem, [
+            E('label', { 'style': 'float:left; margin-right:3px' }, [
+                _('Limit Channels'), E('br'),
+                E('select', {
+                    'class': 'channels',
+                    'style': 'width:auto',
+                    'multiple': 'multiple',  // Enable multi-select
+                    'disabled': (this.disabled != null) ? this.disabled : this.map.readonly
+                })
+            ]),
+            E('br', { 'style': 'clear:left' })
+        ]);
+
+        return this.setInitialValues(section_id, elem);
+    },
+
+    setInitialValues: function (section_id, elem) {
+        var channels = this.cfgvalue(section_id);
+        if (channels) {
+            var channelArray = channels.split(',');
+            this.setSelectedChannels(elem.querySelector('.channels'), channelArray);
+        }
+
+        return elem;
+    },
+
+    cfgvalue: function (section_id) {
+        // Retrieve the current value from the UCI configuration
+        return uci.get('wireless', section_id, 'channels');
+    },
+
+    formvalue: function (section_id) {
+        var node = this.map.findElement('data-field', this.cbid(section_id));
+        var selectedChannels = Array.from(node.querySelector('.channels').selectedOptions).map(opt => opt.value);
+        return selectedChannels;
+    },
+
+    write: function (section_id, value) {
+        var selectedChannels = value.join(',');
+        uci.set('wireless', section_id, 'channels', selectedChannels);
+    }
+});
+
 var CBIWifiTxPowerValue = form.ListValue.extend({
 	callTxPowerList: rpc.declare({
 		object: 'iwinfo',
@@ -932,6 +1032,9 @@ return view.extend({
 				o.onclick = ui.createHandlerFn(s, network_updown, s.section, s.map);
 
 				o = ss.taboption('general', CBIWifiFrequencyValue, '_freq', '<br />' + _('Operating frequency'));
+				o.ucisection = s.section;
+
+				o = ss.taboption('general', CBIWifiChannelsValue, '_channels', '<br />' + _('Limit channels') + '<!-- ' + _('Allow user to limit the channel selection') + ' -->');
 				o.ucisection = s.section;
 
 				if (hwtype == 'mac80211') {
