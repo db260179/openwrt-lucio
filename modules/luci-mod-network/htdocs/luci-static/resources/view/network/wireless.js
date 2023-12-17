@@ -1034,7 +1034,7 @@ return view.extend({
 				o = ss.taboption('general', CBIWifiFrequencyValue, '_freq', '<br />' + _('Operating frequency'));
 				o.ucisection = s.section;
 
-				o = ss.taboption('general', CBIWifiChannelsValue, '_channels', '<br />' + _('Limit channels') + '<!-- ' + _('Allow user to limit the channel selection') + ' -->');
+				o = ss.taboption('general', CBIWifiChannelsValue, '_channels', '<br />' + _('Limit channels'), _('Allow user to limit the channel selection'));
 				o.ucisection = s.section;
 
 				if (hwtype == 'mac80211') {
