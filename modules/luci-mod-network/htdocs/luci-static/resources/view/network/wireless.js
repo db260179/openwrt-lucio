@@ -579,13 +579,8 @@ var CBIWifiChannelsValue = form.Value.extend({
 
                 var band = '%dg'.format(data[0][i].band);
 
-                // Extract only the channel number
-                var channelNumber = data[0][i].channel.split(' ')[0];
-
                 this.channels[band].push(
-                    channelNumber,
-                    // You can include additional information if needed
-                    // '%d (%d Mhz)'.format(channelNumber, data[0][i].mhz),
+                    data[0][i].channel,
                     !data[0][i].restricted
                 );
             }
