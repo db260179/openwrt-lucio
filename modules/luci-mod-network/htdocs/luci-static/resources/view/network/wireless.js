@@ -566,21 +566,24 @@ var CBIWifiChannelsValue = form.Value.extend({
         return Promise.all([
             this.callFrequencyList(section_id)
         ]).then(L.bind(function (data) {
+			console.log('Received data:', data);  // Log the received data
+
             this.channels = {
-                '2g': [],  // Customize based on your data structure
-                '5g': [],  // Customize based on your data structure
-                '6g': [],  // Customize based on your data structure
-                '60g': []  // Customize based on your data structure
+                '2g': [],
+                '5g': [],
+                '6g': [],
+                '60g': []
             };
 
             for (var i = 0; i < data[0].length; i++) {
-                if (!data[0][i].band)
+                if (!data[0][i].band || !data[0][i].channel)
                     continue;
 
                 var band = '%dg'.format(data[0][i].band);
 
                 this.channels[band].push(
                     data[0][i].channel,
+                    '%d (%d Mhz)'.format(data[0][i].channel, data[0][i].mhz),
                     !data[0][i].restricted
                 );
             }
@@ -608,7 +611,6 @@ var CBIWifiChannelsValue = form.Value.extend({
 
         dom.content(elem, [
             E('label', { 'style': 'float:left; margin-right:3px' }, [
-                _('Limit Channels'), E('br'),
                 E('select', {
                     'class': 'channels',
                     'style': 'width:auto',
@@ -623,14 +625,14 @@ var CBIWifiChannelsValue = form.Value.extend({
     },
 
     setInitialValues: function (section_id, elem) {
-        var channels = this.cfgvalue(section_id);
-        if (channels) {
-            var channelArray = channels.split(',');
-            this.setSelectedChannels(elem.querySelector('.channels'), channelArray);
-        }
-
-        return elem;
-    },
+		var channels = this.cfgvalue(section_id);
+		if (channels) {
+			var channelsSelect = elem.querySelector('.channels');
+			channelsSelect.value = channels;  // Set the selected value directly
+		}
+	
+		return elem;
+	},
 
     cfgvalue: function (section_id) {
         // Retrieve the current value from the UCI configuration
@@ -1030,7 +1032,6 @@ return view.extend({
 				o.ucisection = s.section;
 
 				o = ss.taboption('general', CBIWifiChannelsValue, '_channels', '<br />' + _('Limit channels'), _('Allow user to limit the channel selection'));
-				o.ucisection = s.section;
 
 				if (hwtype == 'mac80211') {
 					o = ss.taboption('general', form.Flag, 'legacy_rates', _('Allow legacy 802.11b rates'), _('Legacy or badly behaving devices may require legacy 802.11b rates to interoperate. Airtime efficiency may be significantly reduced where these are used. It is recommended to not allow 802.11b rates where possible.'));
